@@ -1,4 +1,5 @@
 //#define _WIN32_WINNT 0x0500
+#include <iostream>
 
 #include <windows.h>
 #include <windowsx.h>
@@ -8,176 +9,79 @@
 #include <tchar.h>
 #include <assert.h>
 
+#include "opengl.h"
 
-
-const TCHAR szAppName[]=_T("TransparentGL");
-const TCHAR wcWndName[]=_T("TransparentGL");
-
-HDC hDC;
-HGLRC m_hrc;
-int w = 240;
-int h = 240;
-
-void initGL() {
-    glEnable(GL_ALPHA_TEST);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_COLOR_MATERIAL);
-
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glClearColor(0, 0, 0, 0);
-}
-void resizeGL(int width,int height) {
-    glViewport(0,0,width,height);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-
-    glMatrixMode(GL_MODELVIEW );
-    glLoadIdentity();
-}
-void renderGL() {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
-    glPushMatrix();
-
-    glColor3f(0, 1, 1);
-    glBegin(GL_TRIANGLES);                              // Drawing Using Triangles
-        glColor3f(1.0f,0.0f,0.0f);                      // Set The Color To Red
-        glVertex3f( 0.0f, 1.0f, 0.0f);                  // Top
-        glColor3f(0.0f,1.0f,0.0f);                      // Set The Color To Green
-        glVertex3f(-1.0f,-1.0f, 0.0f);                  // Bottom Left
-        glColor3f(0.0f,0.0f,1.0f);                      // Set The Color To Blue
-        glVertex3f( 1.0f,-1.0f, 0.0f);                  // Bottom Right
-    glEnd();
-
-    glPopMatrix();
-    glFlush();
-
-}
+Opengl gl;
+bool quit=false;
 
 
 
-bool CreateHGLRC(HWND hWnd) {
-    PIXELFORMATDESCRIPTOR pfd = {
-      sizeof(PIXELFORMATDESCRIPTOR),
-      1,                                // Version Number
-      PFD_DRAW_TO_WINDOW      |         // Format Must Support Window
-      PFD_SUPPORT_OPENGL      |         // Format Must Support OpenGL
-      PFD_SUPPORT_COMPOSITION |         // Format Must Support Composition
-      PFD_DOUBLEBUFFER,                 // Must Support Double Buffering
-      PFD_TYPE_RGBA,                    // Request An RGBA Format
-      32,                               // Select Our Color Depth
-      0, 0, 0, 0, 0, 0,                 // Color Bits Ignored
-      8,                                // An Alpha Buffer
-      0,                                // Shift Bit Ignored
-      0,                                // No Accumulation Buffer
-      0, 0, 0, 0,                       // Accumulation Bits Ignored
-      24,                               // 16Bit Z-Buffer (Depth Buffer)
-      8,                                // Some Stencil Buffer
-      0,                                // No Auxiliary Buffer
-      PFD_MAIN_PLANE,                   // Main Drawing Layer
-      0,                                // Reserved
-      0, 0, 0                           // Layer Masks Ignored
-   };
-
-   HDC hdc = GetDC(hWnd);
-   int PixelFormat = ChoosePixelFormat(hdc, &pfd);
-
-
-   if (PixelFormat == 0) {
-      assert(0);
-      return false ;
-   }
-
-   BOOL bResult = SetPixelFormat(hdc, PixelFormat, &pfd);
-   if (bResult==FALSE) {
-      assert(0);
-      return false ;
-   }
-
-   m_hrc = wglCreateContext(hdc);
-   if (!m_hrc){
-      assert(0);
-      return true;
-   }
-
-   ReleaseDC(hWnd, hdc);
-
-   return TRUE;
-}
-
-LRESULT CALLBACK WindowFunc(HWND hWnd,UINT msg, WPARAM wParam, LPARAM lParam) {
-    //PAINTSTRUCT ps;
+uint64_t c=0;
+LRESULT CALLBACK WindowFunction(HWND hWnd,UINT msg, WPARAM wParam, LPARAM lParam) {
+    std::cout << c++ << " " << msg <<std::endl;
     switch(msg) {
-        case WM_CREATE:
+    case WM_CREATE:
         break;
-
-        case WM_DESTROY:
-            if(m_hrc) {
-                wglMakeCurrent(NULL, NULL);
-                wglDeleteContext(m_hrc) ;
-            }
-            PostQuitMessage(0) ;
+    case WM_DESTROY:
+        quit=true;
+        PostQuitMessage(0) ;
         break;
-
-        default:
-            return DefWindowProc(hWnd,msg,wParam,lParam);
+    default:
+        return DefWindowProc(hWnd,msg,wParam,lParam);
     }
 
     return 0;
 }
 
+
+
 int WINAPI _tWinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst, LPSTR str,int nWinMode) {
-    //
-    //  //hoock the slave window id
-    //  HWND slaveWin=FindWindow(NULL,L"Untitled - Notepad");
-    //  //get its rect
-    //  if(slaveWin!=NULL){
-    //      LPRECT rc;
-    //      GetWindowRect(slaveWin,&rc);
-    //      w =  rc.right - rc.left;
-    //      h = rc.bottom - rc.top;
-    //      SetWindowPos(slaveWin ,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);
-    //  }else{
-    //      ExitProcess(0);
-    //  }
-
-    //overlay stuff
-
-    WNDCLASSEX wc;
-    memset(&wc, 0, sizeof(wc));
-    wc.cbSize = sizeof(WNDCLASSEX);
-    wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
-    wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = WindowFunc;
-    wc.cbClsExtra  = 0;
-    wc.cbWndExtra  = 0;
-    wc.hInstance = hThisInst;
-    wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)CreateSolidBrush(0x00000000);
-    wc.lpszClassName = szAppName;
-    if(!RegisterClassEx(&wc)) {
-        MessageBox(NULL, _T("RegisterClassEx - failed"), _T("Error"), MB_OK | MB_ICONERROR);
-        return FALSE;
-    }
-
-   //hide window
-   HWND console = GetConsoleWindow();
-   ShowWindow(console,0);
+    //hide console window
+    HWND console = GetConsoleWindow();
+    ShowWindow(console,0);
 
 
 
-   HWND hWnd = CreateWindowEx(
+    /*//hoock the slave window id
+    HWND slaveWin=FindWindow(NULL,L"Untitled - Notepad");
+    //get its rect
+    if(slaveWin!=NULL){
+        LPRECT rc;
+        GetWindowRect(slaveWin,&rc);
+        w =  rc.right - rc.left;
+        h = rc.bottom - rc.top;
+        SetWindowPos(slaveWin ,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);
+    }else{
+        ExitProcess(0);
+    }*/
+
+    int w = 240;
+    int h = 240;
+
+
+    // WINDOW INNITIALISATION
+    const char szAppName[]="azeazsqdf";
+    WNDCLASSEX app;
+    memset(&app, 0, sizeof(app));
+    app.cbSize = sizeof(WNDCLASSEX);
+    app.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
+    app.style = CS_HREDRAW | CS_VREDRAW;
+    app.lpfnWndProc = WindowFunction;
+    app.cbClsExtra  = 0;
+    app.cbWndExtra  = 0;
+    app.hInstance = hThisInst;
+    app.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    app.hCursor = LoadCursor(NULL, IDC_ARROW);
+    app.hbrBackground = (HBRUSH)CreateSolidBrush(0x00000000);
+    app.lpszClassName = szAppName;//IDENTIFIER OF THE APP
+    if(!RegisterClassEx(&app)) {MessageBox(NULL, _T("RegisterClassEx - failed"), _T("Error"), MB_OK | MB_ICONERROR);return false;}
+    HWND mainWindow = CreateWindowEx(
                 WS_EX_COMPOSITED | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
                 szAppName,
-                wcWndName,
+                _T("Overlay Window"),
                 WS_VISIBLE | WS_POPUP,
-                200,
-                150,
+                0,
+                0,
                 w,
                 h,
                 NULL,
@@ -185,50 +89,75 @@ int WINAPI _tWinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst, LPSTR str,int nWi
                 hThisInst,
                 NULL
                 );
-
-
-
-
-    if(!hWnd) {
-        MessageBox(NULL, _T("CreateWindowEx - failed"), _T("Error"), MB_OK | MB_ICONERROR);
-        return FALSE;
-    }
-
-
+    if(!mainWindow) {MessageBox(NULL, _T("CreateWindowEx - failed"), _T("Error"), MB_OK | MB_ICONERROR);return FALSE;}
     DWM_BLURBEHIND bb = {0};
-    HRGN hRgn = CreateRectRgn(0, 0, -1, -1);
     bb.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION;
-    bb.hRgnBlur = hRgn;
+    bb.hRgnBlur = CreateRectRgn(0, 0, -1, -1);
     bb.fEnable = TRUE;
-    DwmEnableBlurBehindWindow(hWnd, &bb);
-
-    CreateHGLRC(hWnd);
-
-    //init opengl and window state
-    CreateHGLRC(hWnd);
-    HDC hdc = GetDC(hWnd);
-    wglMakeCurrent(hdc, m_hrc);//make the stack thread opengl master
-    initGL();
-    resizeGL(w, h);
-    ReleaseDC(hWnd, hdc);
+    DwmEnableBlurBehindWindow(mainWindow, &bb);
 
 
 
+
+
+
+
+
+
+
+
+
+    // init opengl context and ling it to "mainWindow"
+    PIXELFORMATDESCRIPTOR pfd = {
+        sizeof(PIXELFORMATDESCRIPTOR),
+        1,                                // Version Number
+        PFD_DRAW_TO_WINDOW      |         // Format Must Support Window
+        PFD_SUPPORT_OPENGL      |         // Format Must Support OpenGL
+        PFD_SUPPORT_COMPOSITION |         // Format Must Support Composition
+        PFD_DOUBLEBUFFER,                 // Must Support Double Buffering
+        PFD_TYPE_RGBA,                    // Request An RGBA Format
+        32,                               // Select Our Color Depth
+        0, 0, 0, 0, 0, 0,                 // Color Bits Ignored
+        8,                                // An Alpha Buffer
+        0,                                // Shift Bit Ignored
+        0,                                // No Accumulation Buffer
+        0, 0, 0, 0,                       // Accumulation Bits Ignored
+        24,                               // 16Bit Z-Buffer (Depth Buffer)
+        8,                                // Some Stencil Buffer
+        0,                                // No Auxiliary Buffer
+        PFD_MAIN_PLANE,                   // Main Drawing Layer
+        0,                                // Reserved
+        0, 0, 0                           // Layer Masks Ignored
+    };
+
+    HDC handelDC = GetDC(mainWindow);
+    SetPixelFormat(handelDC, ChoosePixelFormat(handelDC, &pfd), &pfd);
+    HGLRC openglContextHandle = wglCreateContext(handelDC);
+    wglMakeCurrent(handelDC, openglContextHandle);//make the stack thread opengl master
+    gl.Init();
+    gl.Resize(w,h);
+    ReleaseDC(mainWindow, handelDC);
+
+
+
+    // LOOP
     MSG msg;
-    while(true) {
-        SetWindowPos(hWnd ,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);// make the overlay window TOPMOST
-
-        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        } else { //get overlay window device contect render and releas it
-            HDC hdc = GetDC(hWnd);
-            wglMakeCurrent(hdc, m_hrc);//make the stack thread opengl master
-            renderGL();
-            SwapBuffers(hdc);
-            ReleaseDC(hWnd, hdc);
-        }
+    while(!quit) {
+        // see if ther is a mesg for the window and dispatch it else
+        if (PeekMessage(&msg, mainWindow, 0, 0, PM_REMOVE)) DispatchMessage(&msg);
+        //get overlay window device contect render and releas it
+        SetWindowPos(mainWindow ,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);// make the window TOPMOST
+        HDC hdc = GetDC(mainWindow);
+        wglMakeCurrent(hdc, openglContextHandle);//make the stack thread opengl master current
+        gl.Render();
+        SwapBuffers(hdc);
+        ReleaseDC(mainWindow, hdc);
     }
 
+    // releas opengl context
+    wglMakeCurrent(NULL, NULL);
+    wglDeleteContext(openglContextHandle) ;
+
+    // quit
     return (FALSE);
 }
