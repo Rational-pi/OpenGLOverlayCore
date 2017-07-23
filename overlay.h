@@ -3,14 +3,19 @@
 
 #include "OpenGL_OverlayWindow.h"
 
+#include <GL/gl.h>
+#include <GL/glu.h>
+
 class Overlay:public OpenGL_OverlayWindow
 {
 public:
-    Overlay(HINSTANCE caller):OpenGL_OverlayWindow(caller){}
+    Overlay(HINSTANCE caller,std::string WindowName, Rect rect):OpenGL_OverlayWindow(caller,WindowName,rect){}
+    void Run();
+protected:
     void GLInit();
-    void GLTick(int64_t milli);
+    //void GLTick(int64_t milli);
     void GLRender();
-    void GLResize(int width,int height);
+    void GLResize(int w, int h);
 };
 
 
