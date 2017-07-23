@@ -6,9 +6,12 @@ std::map<HWND,OpenGL_OverlayWindow*> OpenGL_OverlayWindow::instances=std::map<HW
 
 
 OpenGL_OverlayWindow::OpenGL_OverlayWindow(HINSTANCE caller, std::string WindowName, Rect rect){
+    this->rect=rect;
     killme=false;
+    inited=false;
     this->threadCaller=caller;
     windowClassName=WindowName.c_str();
+
 
 
     // WINDOW INNITIALISATION
@@ -75,11 +78,7 @@ OpenGL_OverlayWindow::OpenGL_OverlayWindow(HINSTANCE caller, std::string WindowN
     HDC handelDC = GetDC(Window);
     SetPixelFormat(handelDC, ChoosePixelFormat(handelDC, &pfd), &pfd);
     openglContextHandle = wglCreateContext(handelDC);
-    wglMakeCurrent(handelDC, openglContextHandle);//make the stack thread opengl master
-    GLInit();
-    GLResize(rect.w,rect.h);
     ReleaseDC(Window, handelDC);
-
 
     instances[Window]=this;
 }
@@ -92,7 +91,18 @@ OpenGL_OverlayWindow::~OpenGL_OverlayWindow(){
     UnregisterClass(windowClassName,threadCaller);
 }
 
+void OpenGL_OverlayWindow::init(){
+    HDC handelDC = GetDC(Window);
+    wglMakeCurrent(handelDC, openglContextHandle);
+    GLInit();
+    GLResize(rect.w,rect.h);
+    ReleaseDC(Window, handelDC);
+    inited=true;
+}
+
 void OpenGL_OverlayWindow::Tick(){
+    if (!inited)MessageBox(NULL, "Contexte not Inited PLS OBJ.init()", "Error", MB_OK | MB_ICONERROR);
+
     /// GLTick(timeelapsed in milliseconds)
     std::chrono::time_point<std::chrono::system_clock> _now=std::chrono::high_resolution_clock::now();
     GLTick(std::chrono::duration_cast<std::chrono::milliseconds>(_now-lastTime).count());
