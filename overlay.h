@@ -10,10 +10,8 @@
 
 class Overlay:public OpenGL_OverlayWindow{
     Icone *icoTest;
-    GLuint textid;
 public:
     Overlay(HINSTANCE caller,std::string WindowName, Rect rect):OpenGL_OverlayWindow(caller,WindowName,rect){}
-    void Run();
 protected:
     void GLInit();
     void GLTick(int64_t milli){}

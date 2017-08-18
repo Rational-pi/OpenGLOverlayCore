@@ -5,13 +5,6 @@
 #include <ctime> // sleep()
 
 
-
-void Overlay::Run(){
-    while(!killme) {
-        Tick();
-        Sleep(2);
-    }
-}
 void Overlay::GLInit(){
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

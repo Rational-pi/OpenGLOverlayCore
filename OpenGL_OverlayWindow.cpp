@@ -6,7 +6,6 @@ std::map<HWND,OpenGL_OverlayWindow*> OpenGL_OverlayWindow::instances=std::map<HW
 
 
 OpenGL_OverlayWindow::OpenGL_OverlayWindow(HINSTANCE caller, std::string WindowName, Rect rect){
-    this->rect=rect;
     killme=false;
     inited=false;
     this->threadCaller=caller;
@@ -92,16 +91,21 @@ OpenGL_OverlayWindow::~OpenGL_OverlayWindow(){
 }
 
 void OpenGL_OverlayWindow::init(){
+    tagRECT *rectPtr=new tagRECT();
+
+    GetWindowRect(Window,rectPtr);
     HDC handelDC = GetDC(Window);
     wglMakeCurrent(handelDC, openglContextHandle);
     GLInit();
-    GLResize(rect.w,rect.h);
+    GLResize(rectPtr->right-rectPtr->left,rectPtr->bottom-rectPtr->top);
     ReleaseDC(Window, handelDC);
     inited=true;
+
+    delete rectPtr;
 }
 
 void OpenGL_OverlayWindow::Tick(){
-    if (!inited)MessageBox(NULL, "Contexte not Inited PLS OBJ.init()", "Error", MB_OK | MB_ICONERROR);
+    if (!inited)MessageBox(NULL, "Contexte not Inited", "Error", MB_OK | MB_ICONERROR);
 
     /// GLTick(timeelapsed in milliseconds)
     std::chrono::time_point<std::chrono::system_clock> _now=std::chrono::high_resolution_clock::now();
@@ -136,4 +140,12 @@ LRESULT OpenGL_OverlayWindow::WindowClassMsgHandler(HWND hWnd, UINT msg, WPARAM 
     }
 
     return 0;
+}
+
+int OpenGL_OverlayWindow::Run(){
+    init();
+    while(!killme) {
+        Tick();
+        Sleep(2);
+    }return 0;
 }
